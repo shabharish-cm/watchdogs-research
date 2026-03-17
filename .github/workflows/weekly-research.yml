@@ -1,0 +1,38 @@
+name: Weekly Product Hunt Research
+
+on:
+  schedule:
+    - cron: '30 0 * * 0'   # Every Sunday 6:00 AM IST (00:30 UTC)
+  workflow_dispatch:         # Manual trigger anytime from GitHub Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install anthropic
+
+      - name: Run Product Hunt research
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python research.py
+
+      - name: Commit and push updated ideas file
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add product-hunt-ideas.md
+          git diff --staged --quiet && echo "No changes to commit." || \
+            git commit -m "Weekly research update — $(date -u +'%Y-%m-%d')" && git push
